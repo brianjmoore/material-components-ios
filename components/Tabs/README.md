@@ -86,7 +86,9 @@ import MaterialComponents
 
 Conform your class to the MDCTabBarDelegate protocol and set it as the tab bar's delegate to handle updating the UI when the user selects a tab. 
 
-### Selected Item
+### Selected item
+
+Update the selected tab programmatically by setting `selectedItem`, optionally with an animation. Delegate methods are not called for programmatic changes, so callers are responsible for updating UI as needed after updating the selected item.
 
 ### Appearance
 
