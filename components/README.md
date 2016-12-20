@@ -125,7 +125,7 @@ Material Components for iOS are written in Objective-C and support Swift and Int
   <!--{: .icon-switch }-->
 
 - [**Tabs**
-  Description TBD.
+  A material tab bar for switching between grouped content.
   ](Tabs/)
   <!--{: .icon-tabs }-->
 
