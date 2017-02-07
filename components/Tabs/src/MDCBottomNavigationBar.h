@@ -16,6 +16,8 @@
 
 #import <UIKit/UIKit.h>
 
+@protocol MDCBottomNavigationBarDelegate;
+
 /**
  A material bottom navigation bar, comparable to UITabBar.
 
@@ -55,10 +57,10 @@ IB_DESIGNABLE
 - (void)setSelectedItem:(nullable UITabBarItem *)selectedItem animated:(BOOL)animated;
 
 /** The bottom navigation bar's delegate. */
-@property(nonatomic, weak, nullable) id<MDCBottomNavigationBarDelegate> delegate;
+@property(nonatomic, weak, nullable) IBOutlet id<MDCBottomNavigationBarDelegate> delegate;
 
 /** Tint color for the navigation bar, which determines the color of the selected item. */
-@property(nonatomic, null_resettable) UIColor *tintColor;
+@property(nonatomic, strong, null_resettable) UIColor *tintColor;
 
 /** Tint color for unselected items. Default: light gray. */
 @property(nonatomic, nonnull) UIColor *unselectedItemTintColor UI_APPEARANCE_SELECTOR;
@@ -76,7 +78,16 @@ IB_DESIGNABLE
  Delegate protocol for MDCBottomNavigationBar. Clients may implement this protocol to receive
  notifications of selection changes in the navigation bar.
  */
-@protocol MDCNavigationBarDelegate <NSObject>
+@protocol MDCBottomNavigationBarDelegate <NSObject>
+
+@optional
+
+/**
+ Called before the selected item changes by user action. This method is not called for programmatic
+ changes to the tab bar's selected item.
+ */
+- (void)bottomNavigationBar:(nonnull MDCBottomNavigationBar *)bottomNavigationBar
+              willSelectItem:(nonnull UITabBarItem *)item;
 
 /**
  Called when the selected item changes by user action. This method is not called for programmatic

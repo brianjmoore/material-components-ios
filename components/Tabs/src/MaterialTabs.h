@@ -14,6 +14,7 @@
  limitations under the License.
  */
 
+#import "MDCBottomNavigationBar.h"
 #import "MDCTabBar.h"
 #import "MDCTabBarAlignment.h"
 #import "MDCTabBarItemAppearance.h"
