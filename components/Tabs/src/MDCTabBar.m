@@ -77,6 +77,16 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
   return MDCItemBarAlignmentLeading;
 }
 
+@interface MDCTabBarConfiguration ()
+
+/// Fixed item bar style, upon which the tab bar generates the underlying item bar style.
+@property(nonatomic, copy) MDCItemBarStyle *baseItemBarStyle;
+
+/// A mapping from MDCTabBarItemAppearance to the default height to use with that appearance.
+@property(nonatomic, nonnull, copy) NSDictionary<NSNumber *, NSNumber *> *heightByItemAppearance;
+
+@end
+
 @interface MDCTabBar () <MDCItemBarDelegate>
 @end
 
@@ -96,31 +106,37 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
   [[[self class] appearance] setBarTintColor:nil];
 }
 
+- (instancetype)initWithFrame:(CGRect)frame configuration:(MDCTabBarConfiguration *)configuration {
+  self = [super initWithFrame:frame];
+  if (self) {
+    _configuration = [configuration copy];
+    [self commonMDCTabBarInit];
+  }
+  return self;
+}
+
 - (instancetype)initWithCoder:(NSCoder *)aDecoder {
   self = [super initWithCoder:aDecoder];
   if (self) {
+    _configuration = [MDCTabBarConfiguration defaultConfiguration];
     [self commonMDCTabBarInit];
   }
   return self;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  self = [super initWithFrame:frame];
-  if (self) {
-    [self commonMDCTabBarInit];
-  }
-  return self;
+  return [self initWithFrame:frame configuration:[MDCTabBarConfiguration defaultConfiguration]];
 }
 
 - (void)commonMDCTabBarInit {
-  _itemAppearance = MDCTabBarItemAppearanceTitles;
-  _displaysUppercaseTitles = YES;
+  _displaysUppercaseTitles = _configuration.displaysUppercaseTitlesByDefault;
+  _itemAppearance = _configuration.defaultItemAppearance;
 
   // Create item bar.
   _itemBar = [[MDCItemBar alloc] initWithFrame:self.bounds];
   _itemBar.autoresizingMask = (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
   _itemBar.delegate = self;
-  _itemBar.alignment = MDCItemBarAlignmentLeading;
+  _itemBar.alignment = MDCItemBarAlignmentForTabBarAlignment(_configuration.defaultAlignment);
   [self addSubview:_itemBar];
 
   [self updateItemBarStyle];
@@ -129,7 +145,14 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
 #pragma mark - Public
 
 + (CGFloat)defaultHeightForItemAppearance:(MDCTabBarItemAppearance)appearance {
-  return [MDCItemBar defaultHeightForStyle:[self defaultStyleForItemAppearance:appearance]];
+  return [self defaultHeightForConfiguration:[MDCTabBarConfiguration defaultConfiguration]
+                              itemAppearance:appearance];
+}
+
++ (CGFloat)defaultHeightForConfiguration:(nonnull MDCTabBarConfiguration *)configuration
+                          itemAppearance:(MDCTabBarItemAppearance)appearance {
+  return [MDCItemBar defaultHeightForStyle:[self defaultStyleWithConfiguration:configuration
+                                                                itemAppearance:appearance]];
 }
 
 - (NSArray<UITabBarItem *> *)items {
@@ -249,44 +272,40 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
 
 #pragma mark - Private
 
-+ (MDCItemBarStyle *)defaultStyleForItemAppearance:(MDCTabBarItemAppearance)appearance {
-  MDCItemBarStyle *style = [[MDCItemBarStyle alloc] init];
++ (MDCItemBarStyle *)defaultStyleWithConfiguration:(MDCTabBarConfiguration *)configuration
+                                    itemAppearance:(MDCTabBarItemAppearance)appearance {
+  MDCItemBarStyle *style = [configuration.baseItemBarStyle copy];
 
-  style.shouldDisplaySelectionIndicator = YES;
-  style.shouldGrowOnSelection = NO;
-  style.titleFont = [MDCTypography buttonFont];
-  style.inkStyle = MDCInkStyleBounded;
-  style.titleImagePadding =
-      (kImageTitleSpecPadding + kImageTitlePaddingAdjustment);
-
+  // Update appearance-dependent style properties.
   BOOL displayImage = NO;
   BOOL displayTitle = NO;
-  CGFloat defaultHeight = 0;
   switch (appearance) {
     case MDCTabBarItemAppearanceImages:
       displayImage = YES;
-      defaultHeight = kImageOnlyBarHeight;
       break;
 
     case MDCTabBarItemAppearanceTitles:
       displayTitle = YES;
-      defaultHeight = kTitleOnlyBarHeight;
       break;
 
     case MDCTabBarItemAppearanceTitledImages:
       displayImage = YES;
       displayTitle = YES;
-      defaultHeight = kTitledImageBarHeight;
       break;
 
     default:
       NSAssert(0, @"Invalid appearance value %zd", appearance);
       displayTitle = YES;
-      defaultHeight = kTitleOnlyBarHeight;
       break;
   }
   style.shouldDisplayImage = displayImage;
   style.shouldDisplayTitle = displayTitle;
+
+  CGFloat defaultHeight = (CGFloat)(configuration.heightByItemAppearance[@(appearance)].floatValue);
+  if (defaultHeight == 0) {
+    NSAssert(0, @"Missing default height for %zd", appearance);
+    defaultHeight = kTitleOnlyBarHeight;
+  }
   style.defaultHeight = defaultHeight;
 
   // Only show badge with images.
@@ -298,7 +317,8 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
 - (void)updateItemBarStyle {
   MDCItemBarStyle *style;
 
-  style = [[self class] defaultStyleForItemAppearance:_itemAppearance];
+  style =
+      [[self class] defaultStyleWithConfiguration:_configuration itemAppearance:_itemAppearance];
 
   style.selectionIndicatorColor = self.tintColor;
   style.inkColor = _inkColor;
@@ -310,3 +330,125 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
 }
 
 @end
+
+#pragma mark -
+
+@implementation MDCTabBarConfiguration
+
+- (instancetype)init {
+  self = [super init];
+  if (self) {
+    // Default initializer is the top tab style.
+    _displaysUppercaseTitlesByDefault = YES;
+    _defaultAlignment = MDCTabBarAlignmentLeading;
+    _defaultItemAppearance = MDCTabBarItemAppearanceTitles;
+    _heightByItemAppearance = @{
+        @(MDCTabBarItemAppearanceTitledImages) : @(kTitledImageBarHeight),
+        @(MDCTabBarItemAppearanceTitles) : @(kTitleOnlyBarHeight),
+        @(MDCTabBarItemAppearanceImages) : @(kImageOnlyBarHeight),
+    };
+
+    // Set initial style with values that don't depend on tab bar state.
+    MDCItemBarStyle *style = [[MDCItemBarStyle alloc] init];
+    style.shouldDisplaySelectionIndicator = YES;
+    style.shouldGrowOnSelection = NO;
+    style.titleFont = [MDCTypography buttonFont];
+    style.inkStyle = MDCInkStyleBounded;
+    style.titleImagePadding =
+        (kImageTitleSpecPadding + kImageTitlePaddingAdjustment);
+    _baseItemBarStyle = style;
+  }
+  return self;
+}
+
+#pragma mark - Public
+
++ (instancetype)defaultConfiguration {
+  return [[[self class] alloc] init];
+}
+
++ (instancetype)bottomNavigationConfiguration {
+  MDCTabBarConfiguration *configuration = [[[self class] alloc] init];
+  configuration.displaysUppercaseTitlesByDefault = NO;
+  configuration.defaultAlignment = MDCTabBarAlignmentJustified;
+  configuration.defaultItemAppearance = MDCTabBarItemAppearanceTitledImages;
+
+  const CGFloat kBottomNavigationHeight = 56;
+  configuration.heightByItemAppearance = @{
+      @(MDCTabBarItemAppearanceTitledImages) : @(kBottomNavigationHeight),
+      @(MDCTabBarItemAppearanceTitles) : @(kBottomNavigationHeight),
+      @(MDCTabBarItemAppearanceImages) : @(kBottomNavigationHeight),
+  };
+
+  // Set initial style with values that don't depend on tab bar state.
+  MDCItemBarStyle *style = [[MDCItemBarStyle alloc] init];
+  style.shouldDisplaySelectionIndicator = NO;
+  style.shouldGrowOnSelection = YES;
+  style.maximumItemWidth = 168;
+  style.titleFont = [[MDCTypography fontLoader] regularFontOfSize:12];
+  style.inkStyle = MDCInkStyleUnbounded;
+  style.titleImagePadding = 3;
+
+  configuration.baseItemBarStyle = style;
+
+  return configuration;
+}
+
+#pragma mark - NSCopying
+
+- (id)copyWithZone:(NSZone *)zone {
+  MDCTabBarConfiguration *newConfiguration = [[[self class] alloc] init];
+  newConfiguration.displaysUppercaseTitlesByDefault = _displaysUppercaseTitlesByDefault;
+  newConfiguration.defaultAlignment = _defaultAlignment;
+  newConfiguration.defaultItemAppearance = _defaultItemAppearance;
+  newConfiguration.baseItemBarStyle = _baseItemBarStyle;
+  newConfiguration.heightByItemAppearance = _heightByItemAppearance;
+  return newConfiguration;
+}
+
+#pragma mark - NSObject
+
+- (BOOL)isEqual:(id)object {
+  if (![object isKindOfClass:[self class]]) {
+    return NO;
+  }
+  
+  MDCTabBarConfiguration *otherConfiguration = object;
+  
+  if (otherConfiguration.displaysUppercaseTitlesByDefault != _displaysUppercaseTitlesByDefault) {
+    return NO;
+  }
+  
+  if (otherConfiguration.defaultAlignment != _defaultAlignment) {
+    return NO;
+  }
+  
+  if (otherConfiguration.defaultItemAppearance != _defaultItemAppearance) {
+    return NO;
+  }
+
+  MDCItemBarStyle *otherStyle = otherConfiguration.baseItemBarStyle;
+  if (otherStyle != _baseItemBarStyle && ![otherStyle isEqual:_baseItemBarStyle]) {
+    return NO;
+  }
+
+  return YES;
+}
+
+- (NSString *)description {
+  return [NSString stringWithFormat:(@"%@ displaysUppercaseTitlesByDefault:%d defaultAlignment:%d"
+                                     @" defaultItemAppearance:%d baseItemBarStyle:%@ heights:%@"),
+                                    [super description],
+                                    _displaysUppercaseTitlesByDefault,
+                                    (int)_defaultAlignment,
+                                    (int)_defaultItemAppearance,
+                                    _baseItemBarStyle,
+                                    _heightByItemAppearance];
+}
+
+- (NSUInteger)hash {
+  return @(_displaysUppercaseTitlesByDefault).hash ^ @(_defaultAlignment).hash ^
+      @(_defaultItemAppearance).hash ^ _baseItemBarStyle.hash ^ _heightByItemAppearance.hash;
+}
+
+@end 
