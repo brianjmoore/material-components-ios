@@ -181,8 +181,8 @@ IB_DESIGNABLE
 */
 @interface MDCTabBarConfiguration : NSObject <NSCopying>
 
-/** Default tab bar configuration, produces tabs appropriate for use above content. */
-+ (nonnull instancetype)defaultConfiguration;
+/** Configuration which produces tabs appropriate for use above content. */
++ (nonnull instancetype)topTabsConfiguration;
 
 /** Configuration which produces tabs appropriate for use as bottom navigation. */
 + (nonnull instancetype)bottomNavigationConfiguration;

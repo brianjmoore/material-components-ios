@@ -118,14 +118,14 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
 - (instancetype)initWithCoder:(NSCoder *)aDecoder {
   self = [super initWithCoder:aDecoder];
   if (self) {
-    _configuration = [MDCTabBarConfiguration defaultConfiguration];
+    _configuration = [MDCTabBarConfiguration topTabsConfiguration];
     [self commonMDCTabBarInit];
   }
   return self;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  return [self initWithFrame:frame configuration:[MDCTabBarConfiguration defaultConfiguration]];
+  return [self initWithFrame:frame configuration:[MDCTabBarConfiguration topTabsConfiguration]];
 }
 
 - (void)commonMDCTabBarInit {
@@ -145,7 +145,7 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
 #pragma mark - Public
 
 + (CGFloat)defaultHeightForItemAppearance:(MDCTabBarItemAppearance)appearance {
-  return [self defaultHeightForConfiguration:[MDCTabBarConfiguration defaultConfiguration]
+  return [self defaultHeightForConfiguration:[MDCTabBarConfiguration topTabsConfiguration]
                               itemAppearance:appearance];
 }
 
@@ -363,7 +363,7 @@ static MDCItemBarAlignment MDCItemBarAlignmentForTabBarAlignment(MDCTabBarAlignm
 
 #pragma mark - Public
 
-+ (instancetype)defaultConfiguration {
++ (instancetype)topTabsConfiguration {
   return [[[self class] alloc] init];
 }
 
