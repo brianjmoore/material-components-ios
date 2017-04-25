@@ -29,8 +29,7 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  MDCTabBarConfiguration *configuration = [MDCTabBarConfiguration bottomNavigationConfiguration];
-  _bottomNavigationBar = [[MDCTabBar alloc] initWithFrame:CGRectZero configuration:configuration];
+  _bottomNavigationBar = [[MDCTabBar alloc] initWithFrame:CGRectZero];
   _bottomNavigationBar.autoresizingMask =
       UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
   _bottomNavigationBar.delegate = self;
@@ -71,6 +70,12 @@
 
 - (void)tabBar:(MDCTabBar *)tabBar didSelectItem:(UITabBarItem *)item {
   [self updateDisplay];
+}
+
+#pragma mark - UIBarPositioningDelegate
+
+- (UIBarPosition)positionForBar:(id<UIBarPositioning>)bar {
+  return UIBarPositionBottom;
 }
 
 #pragma mark - Private
