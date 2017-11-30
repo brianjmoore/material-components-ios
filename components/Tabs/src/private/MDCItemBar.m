@@ -35,11 +35,11 @@ static const NSTimeInterval kDefaultAnimationDuration = 0.3f;
 /// Placeholder width for cells, which get per-item sizing.
 static const CGFloat kPlaceholderCellWidth = 10.0f;
 
-/// Horizontal insets in regular size class layouts.
-static const CGFloat kRegularInset = 56.0f;
+/// Horizontal insets for iPads.
+static const CGFloat kPadInset = 56.0f;
 
-/// Horizontal insets in compact size class layouts.
-static const CGFloat kCompactInset = 8.0f;
+/// Horizontal insets for phones.
+static const CGFloat kPhoneInset = 8.0f;
 
 /// KVO context pointer identifying changes in MDCItemBarItem properties.
 static void *kItemPropertyContext = &kItemPropertyContext;
@@ -407,10 +407,7 @@ static void *kItemPropertyContext = &kItemPropertyContext;
   CGSize size = CGSizeMake(CGFLOAT_MAX, itemHeight);
 
   // Size cell to fit content.
-  size = [MDCItemBarCell sizeThatFits:size
-                  horizontalSizeClass:[self horizontalSizeClass]
-                                 item:item
-                                style:_style];
+  size = [MDCItemBarCell sizeThatFits:size item:item style:_style];
 
   // Divide justified items evenly across the view.
   if (_alignment == MDCItemBarAlignmentJustified) {
@@ -641,18 +638,16 @@ static void *kItemPropertyContext = &kItemPropertyContext;
     return;
   }
 
-  UIUserInterfaceSizeClass horizontalSizeClass = [self horizontalSizeClass];
-
   UIEdgeInsets newSectionInset = UIEdgeInsetsZero;
   switch (_alignment) {
     case MDCItemBarAlignmentLeading:
-      newSectionInset = [self leadingAlignedInsetsForHorizontalSizeClass:horizontalSizeClass];
+      newSectionInset = [self leadingAlignedInsets];
       break;
     case MDCItemBarAlignmentJustified:
       newSectionInset = [self justifiedInsets];
       break;
     case MDCItemBarAlignmentCenter:
-      newSectionInset = [self centeredInsetsForHorizontalSizeClass:horizontalSizeClass];
+      newSectionInset = [self centeredInsets];
       break;
     case MDCItemBarAlignmentCenterSelected:
       newSectionInset = [self centerSelectedInsets];
@@ -680,9 +675,9 @@ static void *kItemPropertyContext = &kItemPropertyContext;
   [self updateSelectionIndicatorToIndex:[self indexForItem:_selectedItem]];
 }
 
-- (UIEdgeInsets)leadingAlignedInsetsForHorizontalSizeClass:(UIUserInterfaceSizeClass)sizeClass {
-  const BOOL isRegular = (sizeClass == UIUserInterfaceSizeClassRegular);
-  CGFloat inset = isRegular ? kRegularInset : kCompactInset;
+- (UIEdgeInsets)leadingAlignedInsets {
+  const BOOL isPad = (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad);
+  CGFloat inset = isPad ? kPadInset : kPhoneInset;
   // If the collection view has Safe Area insets, we don't want to add an extra horizontal inset.
 #if defined(__IPHONE_11_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0)
   if (@available(iOS 11.0, *)) {
@@ -701,10 +696,10 @@ static void *kItemPropertyContext = &kItemPropertyContext;
   return UIEdgeInsetsMake(0.0, sideInsets, 0.0, sideInsets);
 }
 
-- (UIEdgeInsets)centeredInsetsForHorizontalSizeClass:(UIUserInterfaceSizeClass)sizeClass {
+- (UIEdgeInsets)centeredInsets {
   CGFloat itemWidths = [self totalWidthOfAllItems];
   CGFloat viewWidth = [self adjustedCollectionViewWidth];
-  UIEdgeInsets insets = [self leadingAlignedInsetsForHorizontalSizeClass:sizeClass];
+  UIEdgeInsets insets = [self leadingAlignedInsets];
   if (itemWidths <= (viewWidth - insets.left - insets.right)) {
     CGFloat sideInsets = ([self adjustedCollectionViewWidth] - itemWidths) / 2.0f;
     return UIEdgeInsetsMake(0.0, sideInsets, 0.0, sideInsets);

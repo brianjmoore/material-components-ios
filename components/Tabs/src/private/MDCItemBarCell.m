@@ -91,17 +91,17 @@ static const NSTimeInterval kSelectionAnimationDuration = 0.3f;
 
 #pragma mark - Public
 
-+ (UIEdgeInsets)edgeInsetsForHorizontalSizeClass:(UIUserInterfaceSizeClass)sizeClass {
++ (UIEdgeInsets)edgeInsets {
   // Padding from spec: https://material.io/guidelines/components/tabs.html
-  CGFloat outerPadding = (sizeClass == UIUserInterfaceSizeClassRegular) ? 24.0f : 12.0f;
+  const BOOL isPad = (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad);
+  CGFloat outerPadding = isPad ? 24.0f : 12.0f;
   return UIEdgeInsetsMake(0.0, outerPadding, 0.0, outerPadding);
 }
 
 + (CGSize)sizeThatFits:(CGSize)size
-    horizontalSizeClass:(UIUserInterfaceSizeClass)sizeClass
-                   item:(UITabBarItem *)item
-                  style:(MDCItemBarStyle *)style {
-  UIEdgeInsets insets = [self edgeInsetsForHorizontalSizeClass:sizeClass];
+                  item:(UITabBarItem *)item
+                 style:(MDCItemBarStyle *)style {
+  UIEdgeInsets insets = [self edgeInsets];
   NSString *title = [self displayedTitleForTitle:item.title style:style];
 
   CGRect textBounds = CGRectZero;

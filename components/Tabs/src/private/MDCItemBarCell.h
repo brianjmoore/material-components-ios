@@ -23,12 +23,11 @@
 
 /** Returns the optimal size for the item with the given size class and content view object. */
 + (CGSize)sizeThatFits:(CGSize)size
-    horizontalSizeClass:(UIUserInterfaceSizeClass)sizeClass
-                   item:(nonnull UITabBarItem *)item
-                  style:(nonnull MDCItemBarStyle *)style;
+                  item:(nonnull UITabBarItem *)item
+                 style:(nonnull MDCItemBarStyle *)style;
 
-/** Returns the additional insets applied outside item content for the given size class. */
-+ (UIEdgeInsets)edgeInsetsForHorizontalSizeClass:(UIUserInterfaceSizeClass)sizeClass;
+/** Returns the additional insets applied outside item content. */
++ (UIEdgeInsets)edgeInsets;
 
 /** Title for the tab. Defaults to the empty string. */
 @property(nonatomic, copy, nonnull) NSString *title;
